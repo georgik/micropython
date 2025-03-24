@@ -1,0 +1,20 @@
+dependencies:
+  espressif/esp_lcd_touch_tt21100: '*'
+  idf:
+    version: '>=5.0.0'
+description: Simple DirectMedia Layer (SDL) Version 3.0 (ESP-IDF wrapper on upstream
+  SDL)
+files:
+  exclude:
+  - Android.mk
+  - VisualC*
+  - XCode
+  - android-project
+  - wayland-protocols
+  include:
+  - SDL/include/build_config/*.h
+  - include/build_config/*.h
+license: Zlib
+repository: https://github.com/georgik/SDL/tree/feature/esp-idf
+url: https://www.libsdl.org/
+version: 3.1.2~10
