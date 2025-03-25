@@ -5,6 +5,7 @@
 #include "py/mphal.h"
 
 #include "SDL.h"
+#include "SDL_render.h"  // For SDL_RenderFillRect and SDL_RenderDrawRect
 #include "esp_log.h"
 
 // sdl.init()
@@ -42,11 +43,11 @@ static mp_obj_t sdl_create_window(mp_obj_t title_obj, mp_obj_t width_obj, mp_obj
 static MP_DEFINE_CONST_FUN_OBJ_3(sdl_create_window_obj, sdl_create_window);
 
 // sdl.clear(renderer, r, g, b)
-static mp_obj_t sdl_clear(size_t n_args, const mp_obj_t *args) {
-    SDL_Renderer *renderer = (SDL_Renderer *)(uintptr_t)mp_obj_get_int(args[0]);
-    uint8_t r = mp_obj_get_int(args[1]);
-    uint8_t g = mp_obj_get_int(args[2]);
-    uint8_t b = mp_obj_get_int(args[3]);
+static mp_obj_t sdl_clear(mp_obj_t renderer_obj, mp_obj_t r_obj, mp_obj_t g_obj, mp_obj_t b_obj) {
+    SDL_Renderer *renderer = (SDL_Renderer *)(uintptr_t)mp_obj_get_int(renderer_obj);
+    uint8_t r = mp_obj_get_int(r_obj);
+    uint8_t g = mp_obj_get_int(g_obj);
+    uint8_t b = mp_obj_get_int(b_obj);
 
     SDL_SetRenderDrawColor(renderer, r, g, b, 255);
     SDL_RenderClear(renderer);
@@ -69,7 +70,7 @@ static MP_DEFINE_CONST_FUN_OBJ_0(sdl_update_obj, sdl_update);
 static mp_obj_t sdl_destroy_window(mp_obj_t window_obj, mp_obj_t renderer_obj) {
     SDL_Window *window = (SDL_Window *)(uintptr_t)mp_obj_get_int(window_obj);
     SDL_Renderer *renderer = (SDL_Renderer *)(uintptr_t)mp_obj_get_int(renderer_obj);
-    
+
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
 
@@ -77,14 +78,78 @@ static mp_obj_t sdl_destroy_window(mp_obj_t window_obj, mp_obj_t renderer_obj) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_2(sdl_destroy_window_obj, sdl_destroy_window);
 
+// sdl.set_render_draw_color(renderer, r, g, b, a)
+static mp_obj_t sdl_set_render_draw_color(mp_obj_t renderer_obj, mp_obj_t r_obj, mp_obj_t g_obj, mp_obj_t b_obj, mp_obj_t a_obj) {
+    SDL_Renderer *renderer = (SDL_Renderer *)(uintptr_t)mp_obj_get_int(renderer_obj);
+    uint8_t r = mp_obj_get_int(r_obj);
+    uint8_t g = mp_obj_get_int(g_obj);
+    uint8_t b = mp_obj_get_int(b_obj);
+    uint8_t a = mp_obj_get_int(a_obj);
+    SDL_SetRenderDrawColor(renderer, r, g, b, a);
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(sdl_set_render_draw_color_obj, 5, 5, sdl_set_render_draw_color);
+
+// sdl.render_fill_rect(renderer, x, y, w, h)
+static mp_obj_t sdl_render_fill_rect(mp_obj_t renderer_obj, mp_obj_t x_obj, mp_obj_t y_obj, mp_obj_t w_obj, mp_obj_t h_obj) {
+    SDL_Renderer *renderer = (SDL_Renderer *)(uintptr_t)mp_obj_get_int(renderer_obj);
+    float x = mp_obj_get_float(x_obj);
+    float y = mp_obj_get_float(y_obj);
+    float w = mp_obj_get_float(w_obj);
+    float h = mp_obj_get_float(h_obj);
+    SDL_FRect rect;
+    rect.x = x;
+    rect.y = y;
+    rect.w = w;
+    rect.h = h;
+    SDL_RenderFillRect(renderer, &rect);
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(sdl_render_fill_rect_obj, 5, 5, sdl_render_fill_rect);
+
+// sdl.render_draw_rect(renderer, x, y, w, h)
+static mp_obj_t sdl_render_draw_rect(mp_obj_t renderer_obj, mp_obj_t x_obj, mp_obj_t y_obj, mp_obj_t w_obj, mp_obj_t h_obj) {
+    SDL_Renderer *renderer = (SDL_Renderer *)(uintptr_t)mp_obj_get_int(renderer_obj);
+    float x = mp_obj_get_float(x_obj);
+    float y = mp_obj_get_float(y_obj);
+    float w = mp_obj_get_float(w_obj);
+    float h = mp_obj_get_float(h_obj);
+    SDL_FRect frect;
+    frect.x = x;
+    frect.y = y;
+    frect.w = w;
+    frect.h = h;
+    // Convert the float rect to an integer rect for the outline
+    SDL_Rect irect;
+    irect.x = (int)frect.x;
+    irect.y = (int)frect.y;
+    irect.w = (int)frect.w;
+    irect.h = (int)frect.h;
+    SDL_RenderRect(renderer, &irect);
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(sdl_render_draw_rect_obj, 5, 5, sdl_render_draw_rect);
+
+// sdl.render_present(renderer)
+static mp_obj_t sdl_render_present(mp_obj_t renderer_obj) {
+    SDL_Renderer *renderer = (SDL_Renderer *)(uintptr_t)mp_obj_get_int(renderer_obj);
+    SDL_RenderPresent(renderer);
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(sdl_render_present_obj, sdl_render_present);
+
 // Module globals
 static const mp_rom_map_elem_t sdl_module_globals_table[] = {
-    { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_sdl) },
-    { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&sdl_init_obj) },
-    { MP_ROM_QSTR(MP_QSTR_create_window), MP_ROM_PTR(&sdl_create_window_obj) },
-    { MP_ROM_QSTR(MP_QSTR_clear), MP_ROM_PTR(&sdl_clear_obj) },
-    { MP_ROM_QSTR(MP_QSTR_update), MP_ROM_PTR(&sdl_update_obj) },
-    { MP_ROM_QSTR(MP_QSTR_destroy_window), MP_ROM_PTR(&sdl_destroy_window_obj) },
+    { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_sdl3) },
+    { MP_ROM_QSTR(MP_QSTR_SDL_Init), MP_ROM_PTR(&sdl_init_obj) },
+    { MP_ROM_QSTR(MP_QSTR_SDL_CreateWindow), MP_ROM_PTR(&sdl_create_window_obj) },
+    { MP_ROM_QSTR(MP_QSTR_SDL_Clear), MP_ROM_PTR(&sdl_clear_obj) },
+    { MP_ROM_QSTR(MP_QSTR_SDL_Update), MP_ROM_PTR(&sdl_update_obj) },
+    { MP_ROM_QSTR(MP_QSTR_SDL_DestroyWindow), MP_ROM_PTR(&sdl_destroy_window_obj) },
+    { MP_ROM_QSTR(MP_QSTR_SDL_SetRenderDrawColor), MP_ROM_PTR(&sdl_set_render_draw_color_obj) },
+    { MP_ROM_QSTR(MP_QSTR_SDL_RenderFillRect), MP_ROM_PTR(&sdl_render_fill_rect_obj) },
+    { MP_ROM_QSTR(MP_QSTR_SDL_RenderDrawRect), MP_ROM_PTR(&sdl_render_draw_rect_obj) },
+    { MP_ROM_QSTR(MP_QSTR_SDL_RenderPresent), MP_ROM_PTR(&sdl_render_present_obj) },
 };
 static MP_DEFINE_CONST_DICT(sdl_module_globals, sdl_module_globals_table);
 
@@ -95,4 +160,4 @@ const mp_obj_module_t sdl_user_cmodule = {
 };
 
 // Module registration
-MP_REGISTER_MODULE(MP_QSTR_sdl, sdl_user_cmodule);
+MP_REGISTER_MODULE(MP_QSTR_sdl3, sdl_user_cmodule);

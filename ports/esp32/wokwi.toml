@@ -1,0 +1,5 @@
+
+[wokwi]
+version = 1
+firmware = "build-ESP32_GENERIC_S3-SPIRAM_OCT/flasher_args.json"
+elf = "build-ESP32_GENERIC_S3-SPIRAM_OCT/micropython.bin"
