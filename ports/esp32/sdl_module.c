@@ -111,7 +111,7 @@ static mp_obj_t sdl_render_draw_rect(size_t n_args, const mp_obj_t *args) {
     frect.w = w;
     frect.h = h;
 
-    SDL_RenderRect(renderer, &frect);
+    SDL_RenderFillRect(renderer, &frect);
     return mp_const_none;
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(sdl_render_draw_rect_obj, 5, 5, sdl_render_draw_rect);
